@@ -11,5 +11,12 @@
         <ignoreFiles>
             <directory name="vendor" />
         </ignoreFiles>
+
     </projectFiles>
+    <issueHandlers>
+        <!-- for annotation -->
+        <PossiblyUnusedProperty errorLevel="suppress" />
+        <PossiblyUnusedMethod errorLevel="suppress" />
+        <UnusedClass errorLevel="suppress" />
+    </issueHandlers>
 </psalm>
