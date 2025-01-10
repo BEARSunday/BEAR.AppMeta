@@ -14,6 +14,8 @@ use function file_exists;
 use function is_dir;
 use function mkdir;
 
+use const DIRECTORY_SEPARATOR;
+
 final class Meta extends AbstractAppMeta
 {
     /**
@@ -25,12 +27,12 @@ final class Meta extends AbstractAppMeta
     {
         $this->name = $name;
         $this->appDir = $appDir ?: $this->getAppDir($name);
-        $this->tmpDir = $this->appDir . '/var/tmp/' . $context;
+        $this->tmpDir = $this->appDir . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'tmp' . DIRECTORY_SEPARATOR . $context;
         if (! file_exists($this->tmpDir) && ! @mkdir($this->tmpDir, 0777, true) && ! is_dir($this->tmpDir)) {
             throw new NotWritableException($this->tmpDir);
         }
 
-        $this->logDir = $this->appDir . '/var/log/' . $context;
+        $this->logDir = $this->appDir . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'log' . DIRECTORY_SEPARATOR . $context;
         if (! file_exists($this->logDir) && ! @mkdir($this->logDir, 0777, true) && ! is_dir($this->logDir)) {
             throw new NotWritableException($this->logDir); // @codeCoverageIgnore
         }

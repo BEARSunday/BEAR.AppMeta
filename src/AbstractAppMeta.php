@@ -18,6 +18,8 @@ use function preg_replace;
 use function sprintf;
 use function strtolower;
 
+use const DIRECTORY_SEPARATOR;
+
 abstract class AbstractAppMeta
 {
     /**
@@ -41,7 +43,7 @@ abstract class AbstractAppMeta
     {
         $list = new Psr4List();
 
-        foreach ($list($this->name . '\Resource', $this->appDir . '/src/Resource') as [$class, $file]) {
+        foreach ($list($this->name . '\Resource', $this->appDir . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Resource') as [$class, $file]) {
             if (! is_a($class, ResourceObject::class, true)) {
                 continue;
             }
@@ -81,8 +83,6 @@ abstract class AbstractAppMeta
     }
 
     /**
-     * @SuppressWarnings(PHPMD.UnusedPrivateMethod)
-     *
      * False positive: used in array_walk
      */
     private function camel2kebab(string &$str): void  // phpcs:ignore
