@@ -103,14 +103,17 @@ class AppMetaTest extends TestCase
     {
         $appMeta = new Meta('FakeVendor\HelloWorld');
         $uris = [];
+        $paths = [];
         foreach ($appMeta->getGenerator('app') as $uri) {
             $uris[] = $uri;
+            $paths[] = $uri->uriPath;
         }
 
         $this->assertCount(5, $uris);
         $this->assertSame('/one', $uris[0]->uriPath);
         $this->assertSame(One::class, $uris[0]->class);
         $this->assertStringContainsString('tests/Fake/fake-app/src/Resource/App/One.php', $uris[0]->filePath);
+        $this->assertSame('/one', $paths[0]);
     }
 
     public function testGetGeneratorAll(): void
