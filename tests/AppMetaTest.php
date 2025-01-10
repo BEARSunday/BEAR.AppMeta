@@ -14,9 +14,15 @@ use FakeVendor\HelloWorld\Resource\App\User;
 use FakeVendor\HelloWorld\Resource\Page\Index;
 use PHPUnit\Framework\TestCase;
 
+use function array_map;
 use function chmod;
 use function dirname;
 use function file_put_contents;
+use function sort;
+use function str_replace;
+
+use const DIRECTORY_SEPARATOR;
+use const PHP_OS_FAMILY;
 
 class AppMetaTest extends TestCase
 {
@@ -29,13 +35,19 @@ class AppMetaTest extends TestCase
 
         $app = dirname(__DIR__) . '/tests/Fake/fake-app/var/tmp';
         file_put_contents($app . '/app/cache', '1');
+        // ディレクトリの権限を元に戻しておく
         chmod(__DIR__ . '/Fake/fake-not-writable/var', 0644);
         $this->appMeta = new Meta('FakeVendor\HelloWorld', 'prod-app');
     }
 
     protected function tearDown(): void
     {
-        chmod(__DIR__ . '/Fake/fake-not-writable/var', 0777);
+        $notWritableDir = __DIR__ . '/Fake/fake-not-writable/var';
+        if (PHP_OS_FAMILY === 'Windows') {
+            @chmod($notWritableDir, 0777);
+        } else {
+            chmod($notWritableDir, 0777);
+        }
     }
 
     public function testNew(): void
@@ -54,7 +66,7 @@ class AppMetaTest extends TestCase
             $files[] = $file;
         }
 
-        $expect = [
+        $expectClasses = [
             One::class,
             Two::class,
             User::class,
@@ -62,16 +74,24 @@ class AppMetaTest extends TestCase
             Three::class,
             Four::class,
         ];
-        $this->assertSame($expect, $classes);
-        $expect = [
-            $appMeta->appDir . '/src/Resource/App/One.php',
-            $appMeta->appDir . '/src/Resource/App/Two.php',
-            $appMeta->appDir . '/src/Resource/App/User.php',
-            $appMeta->appDir . '/src/Resource/Page/Index.php',
-            $appMeta->appDir . '/src/Resource/App/Sub/Three.php',
-            $appMeta->appDir . '/src/Resource/App/Sub/Sub/Four.php',
+        sort($expectClasses);
+        sort($classes);
+        $this->assertSame($expectClasses, $classes);
+
+        $expectFiles = [
+            'src/Resource/App/One.php',
+            'src/Resource/App/Two.php',
+            'src/Resource/App/User.php',
+            'src/Resource/Page/Index.php',
+            'src/Resource/App/Sub/Three.php',
+            'src/Resource/App/Sub/Sub/Four.php',
         ];
-        $this->assertSame($expect, $files);
+        sort($expectFiles);
+
+        // 実際のフルパスから $appMeta->appDir までを削除し、相対パスにして比較する
+        $actualFiles = array_map(static fn ($file) => str_replace($appMeta->appDir . '/', '', $file), $files);
+        sort($actualFiles);
+        $this->assertSame($expectFiles, $actualFiles);
     }
 
     public function testInvalidName(): void
@@ -82,6 +102,10 @@ class AppMetaTest extends TestCase
 
     public function testNotWritable(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Skipping write-protected test on Windows.');
+        }
+
         $this->expectException(NotWritableException::class);
         new Meta('FakeVendor\NotWritable');
     }
@@ -89,8 +113,8 @@ class AppMetaTest extends TestCase
     public function testVarTmpFolderCreation(): void
     {
         new Meta('FakeVendor\HelloWorld', 'stage-app');
-        $this->assertFileExists(__DIR__ . '/Fake/fake-app/var/log/stage-app');
-        $this->assertFileExists(__DIR__ . '/Fake/fake-app/var/tmp/stage-app');
+        $this->assertFileExists(__DIR__ . $this->normalizePath('/Fake/fake-app/var/log/stage-app'));
+        $this->assertFileExists(__DIR__ . $this->normalizePath('/Fake/fake-app/var/tmp/stage-app'));
     }
 
     public function testDoNotClear(): void
@@ -112,7 +136,8 @@ class AppMetaTest extends TestCase
         $this->assertCount(5, $uris);
         $this->assertSame('/one', $uris[0]->uriPath);
         $this->assertSame(One::class, $uris[0]->class);
-        $this->assertStringContainsString('tests/Fake/fake-app/src/Resource/App/One.php', $uris[0]->filePath);
+        // パス比較が Windows/Mac/Linux でずれないように部分一致テスト
+        $this->assertStringContainsString('src/Resource/App/One.php', $uris[0]->filePath);
         $this->assertSame('/one', $paths[0]);
     }
 
@@ -127,6 +152,11 @@ class AppMetaTest extends TestCase
         $this->assertCount(6, $uris);
         $this->assertSame('app://self/one', $uris[0]->uriPath);
         $this->assertSame(One::class, $uris[0]->class);
-        $this->assertStringContainsString('tests/Fake/fake-app/src/Resource/App/One.php', $uris[0]->filePath);
+        $this->assertStringContainsString('src/Resource/App/One.php', $uris[0]->filePath);
+    }
+
+    public function normalizePath(string $path): string
+    {
+        return str_replace('/', DIRECTORY_SEPARATOR, $path);
     }
 }

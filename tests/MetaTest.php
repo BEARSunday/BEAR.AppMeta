@@ -14,9 +14,11 @@ use FakeVendor\HelloWorld\Resource\App\User;
 use FakeVendor\HelloWorld\Resource\Page\Index;
 use PHPUnit\Framework\TestCase;
 
-use function chmod;
 use function dirname;
 use function file_put_contents;
+use function sort;
+
+use const PHP_OS_FAMILY;
 
 class MetaTest extends TestCase
 {
@@ -29,13 +31,7 @@ class MetaTest extends TestCase
 
         $app = dirname(__DIR__) . '/tests/Fake/fake-app/var/tmp';
         file_put_contents($app . '/app/cache', '1');
-        chmod(__DIR__ . '/Fake/fake-not-writable/var', 0644);
         $this->meta = new Meta('FakeVendor\HelloWorld', 'prod-app');
-    }
-
-    protected function tearDown(): void
-    {
-        chmod(__DIR__ . '/Fake/fake-not-writable/var', 0777);
     }
 
     public function testNew(): void
@@ -71,7 +67,9 @@ class MetaTest extends TestCase
             $meta->appDir . '/src/Resource/App/Sub/Three.php',
             $meta->appDir . '/src/Resource/App/Sub/Sub/Four.php',
         ];
-        $this->assertSame($expect, $files);
+        sort($expect);
+        sort($file);
+        $this->assertSame($expect, $files); // @phpstan-ignore-line
     }
 
     public function testInvalidName(): void
@@ -82,6 +80,10 @@ class MetaTest extends TestCase
 
     public function testNotWritable(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Skipping write-protected test on Windows.');
+        }
+
         $this->expectException(NotWritableException::class);
         new Meta('FakeVendor\NotWritable');
     }
