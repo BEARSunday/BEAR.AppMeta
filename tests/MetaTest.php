@@ -12,11 +12,11 @@ use FakeVendor\HelloWorld\Resource\App\User;
 use FakeVendor\HelloWorld\Resource\Page\Index;
 use PHPUnit\Framework\TestCase;
 
-use function array_map;
 use function dirname;
 use function file_put_contents;
 use function sort;
 use function str_replace;
+use function var_dump;
 
 use const DIRECTORY_SEPARATOR;
 
@@ -54,24 +54,24 @@ class MetaTest extends TestCase
             Three::class,
             Four::class,
         ];
+        sort($expect);
+        sort($classes);
         $this->assertSame($expect, $classes);
 
         // ファイルパスの比較は相対パスで行う
         $expectFiles = [
-            'src/Resource/App/One.php',
-            'src/Resource/App/Two.php',
-            'src/Resource/App/User.php',
-            'src/Resource/Page/Index.php',
-            'src/Resource/App/Sub/Three.php',
-            'src/Resource/App/Sub/Sub/Four.php',
+            $this->normalizePath($this->meta->appDir . '/src/Resource/App/One.php'),
+            $this->normalizePath($this->meta->appDir . '/src/Resource/App/Two.php'),
+            $this->normalizePath($this->meta->appDir . '/src/Resource/App/User.php'),
+            $this->normalizePath($this->meta->appDir . '/src/Resource/Page/Index.php'),
+            $this->normalizePath($this->meta->appDir . '/src/Resource/App/Sub/Three.php'),
+            $this->normalizePath($this->meta->appDir . '/src/Resource/App/Sub/Sub/Four.php'),
         ];
+        var_dump($expectFiles);
+        var_dump($files);
         sort($expectFiles);
-        $actualFiles = array_map(
-            fn ($file) => str_replace($meta->appDir . DIRECTORY_SEPARATOR, '', $this->normalizePath($file)),
-            $files,
-        );
-        sort($actualFiles);
-        $this->assertSame($expectFiles, $actualFiles);
+        sort($files);
+        $this->assertSame($expectFiles, $files);
     }
 
     public function testVarTmpFolderCreation(): void
@@ -89,6 +89,6 @@ class MetaTest extends TestCase
 
     private function normalizePath(string $path): string
     {
-        return str_replace('/', DIRECTORY_SEPARATOR, $path);
+        return str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
     }
 }
