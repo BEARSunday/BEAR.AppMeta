@@ -81,8 +81,6 @@ abstract class AbstractAppMeta
     }
 
     /**
-     * @SuppressWarnings(PHPMD.UnusedPrivateMethod)
-     *
      * False positive: used in array_walk
      */
     private function camel2kebab(string &$str): void  // phpcs:ignore
