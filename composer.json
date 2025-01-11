@@ -1,6 +1,6 @@
 {
     "name": "bear/app-meta",
-    "description":"BEAR.Sunday application meta information",
+    "description":"AppMeta is a utility class that manages application metadata such as directory paths and resource information. It provides easy access to application directories (appDir, logDir, tmpDir) and resource metadata via a generator.",
     "keywords":[
         "BEAR.Sunday"
     ],
